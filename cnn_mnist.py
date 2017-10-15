@@ -11,20 +11,30 @@ def cnn_model_fn(features, labels, mode):
         input_layer = tf.reshape(features["x"], [-1, 28, 28, 1])
 
     # Convolutional Layer #1
+
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
-        filters=32,
-        kernel_size=[5, 5],
+        filters=128,
+        kernel_size=5,
         padding="same",
         activation=tf.nn.relu
         )
 
-    # Pooling Layer #1
-    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
-
-    # Convolutional Layer # 2 and Pooling Layer #2
-
+    # Convolutional Layer #2
     conv2 = tf.layers.conv2d(
+        inputs=conv1,
+        filters=64,
+        kernel_size=3,
+        padding="same",
+        activation=tf.nn.relu
+
+    )
+
+    # Pooling Layer #1
+    pool1 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+
+    # Convolutional Layer # 3 and Pooling Layer #2
+    conv3 = tf.layers.conv2d(
         inputs=pool1,
         filters=64,
         kernel_size=[5, 5],
@@ -32,7 +42,7 @@ def cnn_model_fn(features, labels, mode):
         activation=tf.nn.relu
     )
 
-    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+    pool2 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
 
     # Dense Layer
 
@@ -60,7 +70,8 @@ def cnn_model_fn(features, labels, mode):
     loss = tf.losses.softmax_cross_entropy(
         onehot_labels=onehot_labels, logits=logits
     )
-    learning_rate = tf.train.exponential_decay(0.001, tf.train.get_global_step(), 100, 0.96, staircase=True)
+    learning_rate = tf.train.exponential_decay(0.01, tf.train.get_global_step(), 100, 0.96, staircase=True)
+
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -91,7 +102,7 @@ def main(unused_argv):
     eval_labels = np.asarray(mnist.test.labels, dtype=np.int32)
 
     # Create the Estimator
-    mnist_classifier = tf.estimator.Estimator(model_fn=cnn_model_fn, model_dir="/tmp/mnist_convnet_model")
+    mnist_classifier = tf.estimator.Estimator(model_fn=cnn_model_fn, model_dir="/tmp/ConvNetV0.2")
 
     # Set up logging for predictions
     tensors_to_log = {"probabilities": "softmax_tensor"}
@@ -108,8 +119,10 @@ def main(unused_argv):
 
     mnist_classifier.train(
         input_fn=train_input_fn,
+        steps=2000,
         hooks=[logging_hook]
     )
+
     # Evaluate the model and print results
     eval_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": eval_data},
@@ -118,6 +131,7 @@ def main(unused_argv):
         shuffle=False
     )
     eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
+
     print(eval_results)
 
 
