@@ -1,3 +1,4 @@
-# DeepLearning
+# Final Year Project: Exploration of Deep Learning Architectures for Volumetric Semantic Segmentation
 
-This need far more modifications
+This is my Final Year Project from PERTONAS University of Technology in Malaysia
+
